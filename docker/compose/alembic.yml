@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  file_alembic:
+    image: file_alembic:latest
+    build:
+      context: ${PWD}
+      dockerfile: docker/Dockerfile
+    command: /bin/bash -c \
+      "echo '[+] Run migrations' && \
+      alembic stamp head --purge && \
+      alembic revision --autogenerate -m "Migrations" && \
+      alembic upgrade head"
+    volumes:
+      - ${PWD}/:/app
+    env_file:
+      - ${PWD}/.env
+    depends_on:
+      file_database:
+        condition: service_healthy
+    networks:
+      - like_network
