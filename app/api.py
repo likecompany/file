@@ -7,7 +7,7 @@ from corecrud import Returning, Values, Where
 from fastapi import APIRouter
 from fastapi.datastructures import UploadFile
 from fastapi.exceptions import HTTPException
-from fastapi.param_functions import Body, Depends, File, Form
+from fastapi.param_functions import Body, Depends, File, Form, Path
 from fastapi.responses import StreamingResponse
 from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,7 +24,6 @@ router = APIRouter()
 
 class FileResponse(ApplicationSchema):
     file_id: str
-    file: Optional[bytes] = None
     file_name: Optional[str] = Field(max_length=256)
     file_size: int
     mime_type: Optional[str] = None
@@ -88,7 +87,6 @@ async def add_new_file_core(
 @router.post(
     path=".addNewFile",
     response_model=ApplicationResponse[FileResponse],
-    response_model_exclude={"result": {"file"}},
     status_code=status.HTTP_200_OK,
 )
 async def add_new_file(
@@ -114,32 +112,7 @@ async def add_new_file(
 
 @router.post(
     path=".getFile",
-    status_code=status.HTTP_200_OK,
-)
-async def get_file(
-    session: AsyncSession = Depends(get_session),
-    request: GetFile = Body(...),
-) -> bytes:
-    file = await crud.files.select.one(
-        Where(FileModel.file_id == request.file_id),
-        session=session,
-    )
-    if not file:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="FILE_NOT_EXISTS",
-        )
-
-    return StreamingResponse(
-        content=io.BytesIO(file.file),
-        media_type=file.mime_type,
-    )
-
-
-@router.post(
-    path=".getFileInformation",
     response_model=ApplicationResponse[FileResponse],
-    response_model_exclude={"result": {"file"}},
     status_code=status.HTTP_200_OK,
 )
 async def get_file_information(
@@ -152,7 +125,7 @@ async def get_file_information(
     )
     if not file:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="FILE_NOT_EXISTS",
         )
 
@@ -160,3 +133,27 @@ async def get_file_information(
         "ok": True,
         "result": file,
     }
+
+
+@router.post(
+    path="/{file_id}",
+    status_code=status.HTTP_200_OK,
+)
+async def get_file(
+    session: AsyncSession = Depends(get_session),
+    file_id: str = Path(...),
+) -> StreamingResponse:
+    file = await crud.files.select.one(
+        Where(FileModel.file_id == file_id),
+        session=session,
+    )
+    if not file:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="FILE_NOT_EXISTS",
+        )
+
+    return StreamingResponse(
+        content=io.BytesIO(file.file),
+        media_type=file.mime_type,
+    )
