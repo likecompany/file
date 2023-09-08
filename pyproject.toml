@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "auth"
+name = "file"
 version = "1.0a"
-description = "Passwordless API for User Authorization."
+description = "Service for storing files."
 authors = ["likecompany"]
 readme = "README.md"
 
