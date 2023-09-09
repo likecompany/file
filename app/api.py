@@ -10,6 +10,7 @@ from fastapi.param_functions import Body, Depends, Form, Path
 from fastapi.responses import StreamingResponse
 from likeinterface.exceptions import LikeAPIError
 from likeinterface.methods import GetAuthorizationInformationMethod
+from magic import Magic
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
@@ -28,7 +29,7 @@ router = APIRouter()
 async def verify_file(
     request: Request,
     file: str = Form(...),
-) -> Tuple[bytes, int, Optional[str], Optional[str]]:
+) -> Tuple[bytes, int]:
     form = await request.form()
 
     file = form.get(file)
@@ -52,7 +53,7 @@ async def verify_file(
         else:
             upload_file += content
 
-    return upload_file, file.size, file.content_type, file.filename
+    return upload_file, file.size
 
 
 async def add_file_core(
@@ -60,9 +61,9 @@ async def add_file_core(
     request: AddFileRequest,
     file: bytes,
     file_size: int,
-    mime_type: Optional[str] = None,
-    file_name: Optional[str] = None,
 ) -> FileModel:
+    magic = Magic(mime=True)
+
     try:
         await interfaces.auth_interface.request(
             method=GetAuthorizationInformationMethod(access_token=request.access_token)
@@ -73,16 +74,13 @@ async def add_file_core(
             detail="ACCESS_DENIED",
         )
 
-    file_name = request.file_name or file_name
-    mime_type = request.mime_type or mime_type
-
     return await crud.files.insert.one(
         Values(
             {
                 FileModel.file: file,
-                FileModel.file_name: file_name,
+                FileModel.file_name: request.file_name,
                 FileModel.file_size: file_size,
-                FileModel.mime_type: mime_type,
+                FileModel.mime_type: request.mime_type or magic.from_buffer(file),
             }
         ),
         Returning(FileModel),
@@ -96,13 +94,13 @@ async def add_file_core(
     status_code=status.HTTP_200_OK,
 )
 async def add_file(
-    file: Tuple[bytes, int, Optional[str], Optional[str]] = Depends(verify_file),
+    file: Tuple[bytes, int] = Depends(verify_file),
     access_token: str = Form(...),
     file_name: Optional[str] = Form(None),
     mime_type: Optional[str] = Form(None),
     session: AsyncSession = Depends(get_session),
 ) -> Dict[str, Any]:
-    upload_file, size, upload_mime_type, upload_file_name = file
+    upload_file, size = file
 
     return {
         "ok": True,
@@ -110,8 +108,6 @@ async def add_file(
             session=session,
             file=upload_file,
             file_size=size,
-            mime_type=upload_mime_type,
-            file_name=upload_file_name,
             request=AddFileRequest(
                 access_token=access_token, file_name=file_name, mime_type=mime_type
             ),
