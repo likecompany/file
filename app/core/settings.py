@@ -68,3 +68,10 @@ class CORSSettings(BaseSettings):
 
 
 cors_settings = CORSSettings()
+
+
+class InterfaceSettings(BaseSettings):
+    AUTH_BASE: str
+
+
+interface_settings = InterfaceSettings()
