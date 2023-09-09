@@ -10,7 +10,7 @@ from fastapi.param_functions import Body, Depends, Form, Path
 from fastapi.responses import StreamingResponse
 from likeinterface.exceptions import LikeAPIError
 from likeinterface.methods import GetAuthorizationInformationMethod
-from magic import Magic
+from magic import Magic, MagicException
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
@@ -74,13 +74,18 @@ async def add_file_core(
             detail="ACCESS_DENIED",
         )
 
+    try:
+        mime_type = request.mime_type or magic.from_buffer(file)
+    except MagicException:
+        mime_type = "application/octet-stream"
+
     return await crud.files.insert.one(
         Values(
             {
                 FileModel.file: file,
                 FileModel.file_name: request.file_name,
                 FileModel.file_size: file_size,
-                FileModel.mime_type: request.mime_type or magic.from_buffer(file),
+                FileModel.mime_type: mime_type,
             }
         ),
         Returning(FileModel),

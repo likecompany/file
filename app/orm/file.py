@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -15,6 +14,6 @@ def file_id_default() -> str:
 class FileModel(ORMModel):
     file_id: Mapped[types.Text] = mapped_column(default=file_id_default, primary_key=True)
     file: Mapped[bytes]
-    file_name: Mapped[Optional[types.String256]]
+    file_name: Mapped[types.String256]
     file_size: Mapped[types.BigInt]
-    mime_type: Mapped[Optional[types.Text]]
+    mime_type: Mapped[types.Text]
