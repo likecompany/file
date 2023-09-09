@@ -9,11 +9,14 @@ from fastapi.datastructures import UploadFile
 from fastapi.exceptions import HTTPException
 from fastapi.param_functions import Body, Depends, File, Form, Path
 from fastapi.responses import StreamingResponse
+from likeinterface.exceptions import LikeAPIError
+from likeinterface.methods import GetAuthorizationInformationMethod
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
 from core.crud import crud
 from core.depends import get_session
+from core.interfaces import interfaces
 from metadata import MAX_FILE_SIZE
 from orm import FileModel
 from requests import AddFileRequest, GetFileRequest
@@ -45,15 +48,24 @@ async def verify_file_size(
 
 async def add_file_core(
     session: AsyncSession,
+    request: AddFileRequest,
     file: bytes,
     file_size: int,
     mime_type: Optional[str] = None,
     file_name: Optional[str] = None,
-    request: Optional[AddFileRequest] = None,
 ) -> FileModel:
-    if request:
-        file_name = request.file_name or file_name
-        mime_type = request.mime_type or mime_type
+    try:
+        await interfaces.auth_interface.request(
+            method=GetAuthorizationInformationMethod(access_token=request.access_token)
+        )
+    except LikeAPIError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="ACCESS_DENIED",
+        )
+
+    file_name = request.file_name or file_name
+    mime_type = request.mime_type or mime_type
 
     return await crud.files.insert.one(
         Values(
@@ -75,6 +87,7 @@ async def add_file_core(
     status_code=status.HTTP_200_OK,
 )
 async def add_file(
+    access_token: str = Form(...),
     file_name: Optional[str] = Form(None),
     mime_type: Optional[str] = Form(None),
     session: AsyncSession = Depends(get_session),
@@ -90,7 +103,9 @@ async def add_file(
             file_size=size,
             mime_type=upload_mime_type,
             file_name=upload_file_name,
-            request=AddFileRequest(file_name=file_name, mime_type=mime_type),
+            request=AddFileRequest(
+                access_token=access_token, file_name=file_name, mime_type=mime_type
+            ),
         ),
     }
 

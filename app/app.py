@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from dataclasses import fields
 from typing import Any, Dict
 
 from fastapi import FastAPI
+from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse
 from starlette import status
 from starlette_admin.contrib.sqla import Admin as SQLAlchemyAdmin
@@ -10,6 +12,7 @@ from starlette_admin.contrib.sqla import ModelView as SQLAlchemyModelView
 
 from api import router as api_router
 from core.exceptions import create_exception_handlers
+from core.interfaces import interfaces
 from core.middleware import create_middleware
 from core.settings import server_settings
 from logger import logger
@@ -35,7 +38,9 @@ def create_application() -> FastAPI:
             status.HTTP_404_NOT_FOUND: lambda request, exception: JSONResponse(
                 content={
                     "ok": False,
-                    "result": "NOT_FOUND",
+                    "result": "NOT_FOUND"
+                    if not isinstance(exception, HTTPException) and exception.detail
+                    else exception.detail,
                 },
                 status_code=status.HTTP_404_NOT_FOUND,
             ),
@@ -58,6 +63,11 @@ def create_application() -> FastAPI:
         @application.on_event("shutdown")
         async def shutdown() -> None:
             logger.warning("Application shutdown")
+
+        @application.on_event("shutdown")
+        async def close_interfaces() -> None:
+            for interface in fields(interfaces):
+                await getattr(interfaces, interface.name).session.close()
 
     def create_routes() -> None:
         @application.post(
