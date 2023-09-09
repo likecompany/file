@@ -4,10 +4,9 @@ import io
 from typing import Any, Dict, Optional, Tuple
 
 from corecrud import Returning, Values, Where
-from fastapi import APIRouter
-from fastapi.datastructures import UploadFile
+from fastapi import APIRouter, Request
 from fastapi.exceptions import HTTPException
-from fastapi.param_functions import Body, Depends, File, Form, Path
+from fastapi.param_functions import Body, Depends, Form, Path
 from fastapi.responses import StreamingResponse
 from likeinterface.exceptions import LikeAPIError
 from likeinterface.methods import GetAuthorizationInformationMethod
@@ -26,24 +25,34 @@ from schema import ApplicationResponse
 router = APIRouter()
 
 
-async def verify_file_size(
-    upload_file: UploadFile = File(...),
+async def verify_file(
+    request: Request,
+    file: str = Form(...),
 ) -> Tuple[bytes, int, Optional[str], Optional[str]]:
-    if upload_file.size > MAX_FILE_SIZE:
+    form = await request.form()
+
+    file = form.get(file)
+    if not file:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="REQUEST_VALIDATION_FAILED",
+        )
+
+    if file.size > MAX_FILE_SIZE:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail="FILE_IS_TOO_BIG",
         )
 
-    file = None
+    upload_file = None
 
-    while content := await upload_file.read(1024):
-        if not file:
-            file = content
+    while content := await file.read(1024):
+        if not upload_file:
+            upload_file = content
         else:
-            file += content
+            upload_file += content
 
-    return file, upload_file.size, upload_file.content_type, upload_file.filename
+    return upload_file, file.size, file.content_type, file.filename
 
 
 async def add_file_core(
@@ -87,19 +96,19 @@ async def add_file_core(
     status_code=status.HTTP_200_OK,
 )
 async def add_file(
+    file: Tuple[bytes, int, Optional[str], Optional[str]] = Depends(verify_file),
     access_token: str = Form(...),
     file_name: Optional[str] = Form(None),
     mime_type: Optional[str] = Form(None),
     session: AsyncSession = Depends(get_session),
-    upload_file: Tuple[bytes, int, Optional[str], Optional[str]] = Depends(verify_file_size),
 ) -> Dict[str, Any]:
-    file, size, upload_mime_type, upload_file_name = upload_file
+    upload_file, size, upload_mime_type, upload_file_name = file
 
     return {
         "ok": True,
         "result": await add_file_core(
             session=session,
-            file=file,
+            file=upload_file,
             file_size=size,
             mime_type=upload_mime_type,
             file_name=upload_file_name,
