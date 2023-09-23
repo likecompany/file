@@ -94,7 +94,7 @@ async def add_file_core(
 
 
 @router.post(
-    path=".addFile",
+    path="/addFile",
     response_model=ApplicationResponse[FileResponse],
     status_code=status.HTTP_200_OK,
 )
@@ -121,7 +121,7 @@ async def add_file(
 
 
 @router.post(
-    path=".getFile",
+    path="/getFile",
     response_model=ApplicationResponse[FileResponse],
     status_code=status.HTTP_200_OK,
 )
@@ -146,7 +146,7 @@ async def get_file_information(
 
 
 @router.post(
-    path="/{file_id}",
+    path="/file/{file_id}",
     status_code=status.HTTP_200_OK,
 )
 async def get_file(
