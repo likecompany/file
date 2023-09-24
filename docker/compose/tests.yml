@@ -12,7 +12,7 @@ services:
     volumes:
       - ${PWD}/file/:/app
     env_file:
-      - ${PWD}/file/.env
+      - ${PWD}/.env
     environment:
       DATABASE_HOSTNAME: file_tests_database
     depends_on:

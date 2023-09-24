@@ -14,7 +14,7 @@ services:
     volumes:
       - ${PWD}/file/:/app
     env_file:
-      - ${PWD}/file/.env
+      - ${PWD}/.env
     depends_on:
       file_database:
         condition: service_healthy
