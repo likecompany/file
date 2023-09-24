@@ -4,15 +4,15 @@ services:
   file_tests:
     image: file_tests:latest
     build:
-      context: ${PWD}
+      context: ${PWD}/file
       dockerfile: docker/Dockerfile
     command: /bin/bash -c \
       "echo '[+] Run tests' && \
       python -m pytest --capture=sys --cov=app --cov-report html tests"
     volumes:
-      - ${PWD}/:/app
+      - ${PWD}/file/:/app
     env_file:
-      - ${PWD}/.env
+      - ${PWD}/file/.env
     environment:
       DATABASE_HOSTNAME: file_tests_database
     depends_on:

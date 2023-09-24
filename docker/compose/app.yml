@@ -4,20 +4,20 @@ services:
   file_backend:
     image: file_backend:latest
     build:
-      context: ${PWD}
+      context: ${PWD}/file
       dockerfile: docker/Dockerfile
     command: /bin/bash -c \
-      "echo '[+] Run backend' && \
+      "echo '[+] Running File Backend' && \
       python main.py"
     volumes:
-      - ${PWD}/app:/app
+      - ${PWD}/file/app:/app
     env_file:
-      - ${PWD}/.env
+      - ${PWD}/file/.env
     depends_on:
       file_database:
         condition: service_healthy
     networks:
       - like_network
-    ports:
-      - ${PORT}:${PORT}
+    expose:
+      - ${FILE_PORT}
     restart: unless-stopped
