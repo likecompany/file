@@ -16,7 +16,7 @@ from starlette import status
 
 from core.crud import crud
 from core.depends import get_session
-from core.interfaces import interfaces
+from core.interface import interface
 from metadata import MAX_FILE_SIZE
 from orm import FileModel
 from requests import AddFileRequest, GetFileRequest
@@ -65,7 +65,7 @@ async def add_file_core(
     magic = Magic(mime=True)
 
     try:
-        await interfaces.auth_interface.request(
+        await interface.request(
             method=GetAuthorizationInformationMethod(access_token=request.access_token)
         )
     except LikeAPIError:
