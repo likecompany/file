@@ -4,7 +4,7 @@ services:
   file_alembic:
     image: file_alembic:latest
     build:
-      context: ${PWD}
+      context: ${PWD}/file
       dockerfile: docker/Dockerfile
     command: /bin/bash -c \
       "echo '[+] Run migrations' && \
@@ -12,9 +12,9 @@ services:
       alembic revision --autogenerate -m "Migrations" && \
       alembic upgrade head"
     volumes:
-      - ${PWD}/:/app
+      - ${PWD}/file/:/app
     env_file:
-      - ${PWD}/.env
+      - ${PWD}/file/.env
     depends_on:
       file_database:
         condition: service_healthy
