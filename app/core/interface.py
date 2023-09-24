@@ -4,4 +4,4 @@ from likeinterface import Interface, Network
 
 from core.settings import interface_settings
 
-interface = Interface(network=Network(base=interface_settings.ШТЕУКАФСУ_ИФЫУ))
+interface = Interface(network=Network(base=interface_settings.INTERFACE_BASE))
