@@ -9,7 +9,7 @@ from fastapi.exceptions import HTTPException
 from fastapi.param_functions import Body, Depends, Form, Path
 from fastapi.responses import StreamingResponse
 from likeinterface.exceptions import LikeAPIError
-from likeinterface.methods import GetUser
+from likeinterface.methods import GetMe
 from magic import Magic, MagicException
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
@@ -65,7 +65,7 @@ async def add_file_core(
     magic = Magic(mime=True)
 
     try:
-        await interface.request(method=GetUser(access_token=request.access_token))
+        await interface.request(method=GetMe(access_token=request.access_token))
     except LikeAPIError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
