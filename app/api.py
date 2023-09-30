@@ -65,9 +65,7 @@ async def add_file_core(
     magic = Magic(mime=True)
 
     try:
-        await interface.request(
-            method=GetUser(access_token=request.access_token)
-        )
+        await interface.request(method=GetUser(access_token=request.access_token))
     except LikeAPIError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -146,7 +144,7 @@ async def get_file_information(
 
 
 @router.post(
-    path="/file/{file_id}",
+    path="/{file_id}",
     status_code=status.HTTP_200_OK,
 )
 async def get_file(
