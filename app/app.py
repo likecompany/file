@@ -23,7 +23,7 @@ def create_application() -> FastAPI:
     Setup FastAPI application: middleware, exception handlers, jwt, logger.
     """
 
-    docs_url, redoc_url, openapi_url = "/docs", "/redoc", "/openapi.json"
+    docs_url, redoc_url, openapi_url = "/file/docs", "/file/redoc", "/file/openapi.json"
     if not server_settings.DEBUG:
         docs_url, redoc_url, openapi_url = None, None, None
 
@@ -32,7 +32,6 @@ def create_application() -> FastAPI:
         description="Service for storing files.",
         version="1.0a",
         debug=server_settings.DEBUG,
-        root_path="/file",
         docs_url=docs_url,
         redoc_url=redoc_url,
         openapi_url=openapi_url,
@@ -54,7 +53,7 @@ def create_application() -> FastAPI:
 
     def create_routes() -> None:
         @application.post(
-            path="/",
+            path="/file",
             response_model=ApplicationResponse[bool],
             status_code=status.HTTP_200_OK,
         )
@@ -68,7 +67,7 @@ def create_application() -> FastAPI:
         logger.info("Creating an admin panel is only available in debug mode, status: ...")
         if server_settings.DEBUG:
             admin = SQLAlchemyAdmin(
-                base_url="/admin",
+                base_url="/file/admin",
                 engine=engine,
                 debug=True,
             )
