@@ -3,6 +3,7 @@ name = "file"
 version = "1.0a"
 description = "Service for storing files."
 authors = ["likecompany"]
+license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
