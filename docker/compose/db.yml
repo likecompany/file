@@ -3,6 +3,7 @@ version: "3.9"
 services:
   file_database:
     image: postgres:15-bookworm
+    restart: always
     volumes:
       - postgres_file_data_database:/var/lib/postgresql/data/
     env_file:
